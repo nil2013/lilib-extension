@@ -3,9 +3,9 @@ extension libraries of LIlib
 
 ## lilib-analyzer
 
-$BH=Nc%G!<%?$KBP$7$F0lDj$NJ,@O$r9T$&$?$a$N%i%$%V%i%j72!#(B
+判例データに対して一定の分析を行うためのライブラリ群。
 
 ## lilib-supremecourtdb
 
-$B:G9b:[H==jH=Nc%G!<%?%Y!<%9$K4^$^$l$kH=Nc%G!<%?$r=hM}$9$k$?$a$N%i%$%V%i%j72!#(B
-$B<g$H$7$F!":G9b:[H=Nc%G!<%?%Y!<%9$X$N@\B3$HH=Nc$N%@%&%s%m!<%I!"$*$h$S%m!<%+%k$KJ]B8$5$l$?$=$l$i$NH=Nc$N=hM}$H!"$=$l$i$N=hM}$NCj>]2=$r9T$&!#(B
+最高裁判所判例データベースに含まれる判例データを処理するためのライブラリ群。
+主として、最高裁判例データベースへの接続と判例のダウンロード、およびローカルに保存されたそれらの判例の処理と、それらの処理の抽象化を行う。
