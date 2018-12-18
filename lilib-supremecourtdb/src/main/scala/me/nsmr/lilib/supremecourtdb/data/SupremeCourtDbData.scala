@@ -1,7 +1,6 @@
 package me.nsmr
 package lilib.supremecourtdb
 
-import java.io.File
 import com.itextpdf.kernel.pdf.{PdfReader, PdfDocument}
 
 protected trait SupremeCourtDbData {
