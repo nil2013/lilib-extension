@@ -8,5 +8,12 @@ lazy val root = (project in file(".")).
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "lilib-supremecourtdb",
-    libraryDependencies += scalaTest % Test
+    libraryDependencies ++= List (
+      scalaTest % Test,
+      scalaXml,
+      jsoup,
+      itext.kernel,
+      itext.asian,
+      lilib.core
+    )
   )
