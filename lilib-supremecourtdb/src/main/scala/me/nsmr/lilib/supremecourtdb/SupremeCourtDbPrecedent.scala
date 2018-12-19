@@ -5,7 +5,7 @@ package supremecourtdb
 import me.nsmr.lilib.core.{ Precedent, Court, CaseNumber }
 import java.time.LocalDate
 
-trait SupremeCourtDbPrecedent extends Precedent {
+trait SupremeCourtDbPrecedent[K] extends Precedent {
   def name: String
   def result: String
   def book: String
@@ -20,5 +20,5 @@ trait SupremeCourtDbPrecedent extends Precedent {
 
   def pdfUrl: String
   // def pdf:
-  def id: String
+  def id: K
 }

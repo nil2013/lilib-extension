@@ -18,31 +18,32 @@ class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData
   /**
    * 当該判例データに対応するPDFファイルを取得します。
    */
-  private def pdfFile = new File(dir, "content.pdf")
+  protected def pdfFile = new File(dir, "content.pdf")
 
   /**
    * 当該判例データについての情報を表現したXMLファイルを取得します。
    */
-  private def infoFile = new File(dir, "info.xml")
-
-  /**
-   * 判例本文のテキストデータを取得します。
-   * 存在しない場合や取得に失敗した場合には、Noneが返ります。
-   */
-  lazy val content: Option[String] = try {
-    Option(PdfTool.extractTextFromPdfFile(data.pdfFile).mkString(System.lineSeparator))
-  } catch {
-    case e: Throwable => None
-  }
+  protected def infoFile = new File(dir, "info.xml")
 
   override def id: String = data.dir.getName
 
   override def getPdfDocument: PdfDocument = new PdfDocument(new PdfReader(this.pdfFile))
 
-  override def getData: SupremeCourtDbPrecedent = new SupremeCourtDbPrecedent {
-    val xml = XML.loadFile(infoFile)
+  /**
+   * 判例本文のテキストデータを取得します。
+   * 存在しない場合や取得に失敗した場合には、Noneが返ります。
+   */
+  def getContent: Option[String] = try {
+    Option(PdfTool.extractTextFromPdfFile(data.pdfFile).mkString(System.lineSeparator))
+  } catch {
+    case e: Throwable => None
+  }
 
-    override def id: String = data.id
+  override def asPrecedent: SupremeCourtDbPrecedent[String] = new SupremeCourtDbPrecedent[String] {
+
+    lazy val xml = XML.loadFile(data.infoFile)
+
+    def id: String = data.id
 
     override def number: CaseNumber = {
       val txt = (xml \ "caseNumber").text
@@ -64,7 +65,7 @@ class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData
 
     override def judgeType: Option[JudgeType] = JudgeType.get((xml \ "type").text)
 
-    override def content: Option[String] = data.content
+    lazy val content: Option[String] = data.getContent
 
     override def name: String = (xml \ "name").text
     override def result: String = (xml \ "result").text

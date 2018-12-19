@@ -13,14 +13,17 @@ trait SupremeCourtDbData[K] {
    * この判例を指示するIDを返却します。
    */
   def id: K
+
   /**
    * PdfDocument形式の判例データを返却します。
    */
   def getPdfDocument: PdfDocument
+
   /**
-   * SupremeCourtDbPrecedent形式の判例についてのメタデータを返却します。
+   * SupremeCourtDbPrecedent形式に変換します。
    */
-  def getData: SupremeCourtDbPrecedent
+  def asPrecedent: SupremeCourtDbPrecedent[K]
+
   /**
    * 判例PDFのためのPdfDocumentを安全に使用します。
    */

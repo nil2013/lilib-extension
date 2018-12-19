@@ -50,7 +50,7 @@ object SupremeCourtDbConnector {
 class SupremeCourtDbConnector() {
   import SupremeCourtDbConnector._
 
-  def getPrecedentById(id: Int): SupremeCourtDbPrecedent = {
+  def getPrecedentById(id: Int): SupremeCourtDbPrecedent[Int] = {
     val doc = Jsoup.connect(getUrlOf(id))
     ???
   }
