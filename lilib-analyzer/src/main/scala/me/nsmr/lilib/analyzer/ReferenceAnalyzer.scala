@@ -126,7 +126,7 @@ class ReferenceAnalyzer {
           None
         }
       }
-      PrecedentReference(caseNumber, court, date)
+      PrecedentReference(caseNumber, court, date, None)
     }
     parsed.toArray
   }
