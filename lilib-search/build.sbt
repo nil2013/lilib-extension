@@ -14,6 +14,7 @@ lazy val root = (project in file(".")).
       jsoup,
       itext.kernel,
       itext.asian,
-      lilib.core
+      lilib.core,
+      akkaActor
     )
   )

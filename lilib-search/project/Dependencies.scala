@@ -16,4 +16,5 @@ object Dependencies {
     lazy val core     = "me.nsmr" %% "lilib" % "0.1.0-SNAPSHOT"
     lazy val analyzer = "me.nsmr" %% "lilib-analyzer" % "0.1.0-SNAPSHOT"
   }
+  lazy val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.18"
 }
