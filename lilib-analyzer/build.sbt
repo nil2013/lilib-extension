@@ -9,6 +9,7 @@ lazy val root = (project in file(".")).
     )),
     name := "lilib-analyzer",
     libraryDependencies ++= List (
-      scalaTest % Test
+      scalaTest % Test,
+      lilib.core
     )
   )
