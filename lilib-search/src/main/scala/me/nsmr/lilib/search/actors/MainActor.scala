@@ -54,7 +54,6 @@ private class MainActor[K] extends Actor {
     case BuildIndexActors.Messages.RespondCourtIndex(response: Map[_, Set[K]], count) => addCourtIndex(response, count)
     case RequestResult => requestResult(sender)
   }: PartialFunction[Any, Unit]).andThen { _ =>
-    printinf(s"date: ${countOfWaitingDate} / case number: ${countOfWaitingCaseNumber} / Court: ${countOfWaitingCourt}")
     if(countOfWaitingDate == 0
       && countOfWaitingCaseNumber == 0
       && countOfWaitingCourt == 0
@@ -92,7 +91,6 @@ private class MainActor[K] extends Actor {
   }
 
   def addItemList(it: Iterator[(K, Precedent)]) = {
-    logger.debug("addItemList is called")
     val dateActor = context.actorOf(BuildIndexActors.props.date[K])
     val caseNumberActor = context.actorOf(BuildIndexActors.props.caseNumber[K])
     val courtActor = context.actorOf(BuildIndexActors.props.court[K])
@@ -134,7 +132,6 @@ private class MainActor[K] extends Actor {
     dateActor ! BuildIndexActors.Messages.SetTotalCount(countOfSentDates)
     caseNumberActor ! BuildIndexActors.Messages.SetTotalCount(countOfSentNumbers)
     courtActor ! BuildIndexActors.Messages.SetTotalCount(countOfSentCourts)
-    printinf(s"requests was successfully sent!: ${countOfWaitingDate} / ${countOfWaitingCourt} / ${countOfWaitingCaseNumber}")
   }
 
   def addDateIndex(response: Map[LocalDate, Set[K]], processedNumber: Int) = {

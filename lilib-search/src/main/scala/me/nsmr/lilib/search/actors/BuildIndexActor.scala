@@ -36,7 +36,6 @@ class BuildDateIndexActor[K] extends Actor {
     }
     case Messages.SetTotalCount(cnt) => this.total = cnt
   }: Any --> Unit).andThen { _ =>
-    printinf(s"total: ${total} / finished: ${finished}")
     if(total > 0 && total == finished) {
       context.parent ! Messages.RespondDateIndex(index, finished)
       self ! PoisonPill

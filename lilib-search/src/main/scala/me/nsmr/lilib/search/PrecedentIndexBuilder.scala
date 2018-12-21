@@ -15,15 +15,6 @@ object PrecedentIndexBuilder {
   def concurrentBuilder[K](implicit sys: ActorSystem): ConcurrentPrecedentIndexBuilder[K] = {
     new ConcurrentPrecedentIndexBuilder[K]
   }
-
-  def concurrentlyBuilding[K, T](body: ConcurrentPrecedentIndexBuilder[K] => T)(implicit sys: ActorSystem): T = {
-    val builder = concurrentBuilder
-    try {
-      body(concurrentBuilder)
-    } finally {
-      builder.close
-    }
-  }
 }
 
 trait PrecedentIndexBuilder[K] {
@@ -33,6 +24,10 @@ trait PrecedentIndexBuilder[K] {
   def build: PrecedentIndex[K]
 }
 
+/**
+ * 並行的に判例データのIndexを作成するビルダーです。
+ * 利用が終了した時点でcloseを実行する必要があります。
+ */
 final class ConcurrentPrecedentIndexBuilder[K](implicit private val system: ActorSystem) extends PrecedentIndexBuilder[K] {
 
   private[this] val actor = MainActor.getActorRef[K]
@@ -50,7 +45,7 @@ final class ConcurrentPrecedentIndexBuilder[K](implicit private val system: Acto
   }
 
   def build: PrecedentIndex[K] = {
-    val future = buildInFuture
+    val future = buildInFuture(Timeout(20 minutes))
     await(future.isCompleted, "Building PrecedentIndex...")
     future.value match {
       case Some(Success(index)) => index
@@ -59,8 +54,7 @@ final class ConcurrentPrecedentIndexBuilder[K](implicit private val system: Acto
     }
   }
 
-  def buildInFuture: Future[PrecedentIndex[K]] = {
-    implicit val timeout = Timeout(20 minutes)
+  def buildInFuture(implicit timeout: Timeout): Future[PrecedentIndex[K]] = {
     actor ? MainActor.Messages.RequestResult map {
       case MainActor.Messages.RespondIndexes(
         indexByDates: Map[_, Set[K]],
