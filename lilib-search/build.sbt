@@ -15,6 +15,8 @@ lazy val root = (project in file(".")).
       itext.kernel,
       itext.asian,
       lilib.core,
+      logger.scalaLogging,
+      logger.logback,
       akkaActor
     )
   )

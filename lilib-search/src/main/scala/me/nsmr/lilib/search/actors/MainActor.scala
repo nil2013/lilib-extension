@@ -9,6 +9,7 @@ import akka.actor.{ Props, ActorRef, ActorRefFactory, Actor }
 import me.nsmr.lilib.core._
 
 private[search] object MainActor {
+
   private[this] lazy val logger = Logger(this.getClass)
 
   def getActorRef[K](implicit sys: ActorRefFactory): ActorRef = sys.actorOf(this.props[K])
@@ -17,7 +18,7 @@ private[search] object MainActor {
 
   object Messages {
     case class AddItem[K](key: K, value: Precedent)
-    case class AddItemList[K](list: Traversable[(K, Precedent)])
+    case class AddItemList[K](it: Iterator[(K, Precedent)])
     case object RequestResult
     case class RespondIndexes[K](
       dateIndex: Map[LocalDate, Set[K]],
@@ -33,10 +34,7 @@ private[search] object MainActor {
 private class MainActor[K] extends Actor {
   import MainActor.Messages._
 
-  type KV = (K, Precedent)
-
   private[this] lazy val logger = Logger[MainActor[K]]
-
 
   private[this] var indexByDate: Map[LocalDate, Set[K]] = Map.empty
   private[this] var indexByCaseNumber: Map[CaseNumber, Set[K]] = Map.empty
@@ -50,12 +48,13 @@ private class MainActor[K] extends Actor {
 
   override def receive = ({
     case AddItem(key: K, value) => addItem(key, value)
-    case AddItemList(list: Traversable[KV]) => addItemList(list)
+    case AddItemList(list: Iterator[(K, Precedent)]) => addItemList(list)
     case BuildIndexActors.Messages.RespondDateIndex(response: Map[_, Set[K]], count) => addDateIndex(response, count)
     case BuildIndexActors.Messages.RespondCaseNumberIndex(response: Map[_, Set[K]], count) => addCaseNumberIndex(response, count)
     case BuildIndexActors.Messages.RespondCourtIndex(response: Map[_, Set[K]], count) => addCourtIndex(response, count)
     case RequestResult => requestResult(sender)
   }: PartialFunction[Any, Unit]).andThen { _ =>
+    printinf(s"date: ${countOfWaitingDate} / case number: ${countOfWaitingCaseNumber} / Court: ${countOfWaitingCourt}")
     if(countOfWaitingDate == 0
       && countOfWaitingCaseNumber == 0
       && countOfWaitingCourt == 0
@@ -92,14 +91,15 @@ private class MainActor[K] extends Actor {
     }
   }
 
-  def addItemList(list: Traversable[KV]) = {
+  def addItemList(it: Iterator[(K, Precedent)]) = {
+    logger.debug("addItemList is called")
     val dateActor = context.actorOf(BuildIndexActors.props.date[K])
     val caseNumberActor = context.actorOf(BuildIndexActors.props.caseNumber[K])
     val courtActor = context.actorOf(BuildIndexActors.props.court[K])
 
     var (countOfSentDates, countOfSentNumbers, countOfSentCourts) = (0, 0, 0)
 
-    list.foreach { case (key, value) =>
+    while(it.hasNext) { val (key, value) = it.next
       try {
         dateActor ! BuildIndexActors.Messages.AddDateIndex(value.date, key)
         countOfSentDates = countOfSentDates + 1
@@ -128,14 +128,20 @@ private class MainActor[K] extends Actor {
       }
     }
 
+    this.countOfWaitingDate = countOfSentDates
+    this.countOfWaitingCourt = countOfSentCourts
+    this.countOfWaitingCaseNumber = countOfSentNumbers
     dateActor ! BuildIndexActors.Messages.SetTotalCount(countOfSentDates)
     caseNumberActor ! BuildIndexActors.Messages.SetTotalCount(countOfSentNumbers)
     courtActor ! BuildIndexActors.Messages.SetTotalCount(countOfSentCourts)
+    printinf(s"requests was successfully sent!: ${countOfWaitingDate} / ${countOfWaitingCourt} / ${countOfWaitingCaseNumber}")
   }
 
   def addDateIndex(response: Map[LocalDate, Set[K]], processedNumber: Int) = {
-    this.indexByDate = this.indexByDate ++ response
-    this.countOfWaitingDate -= processedNumber
+    if(this.countOfWaitingDate > 0) {
+      this.indexByDate = this.indexByDate ++ response
+      this.countOfWaitingDate -= processedNumber
+    }
   }
 
   def addCaseNumberIndex(caseNumberIndex: Map[CaseNumber, Set[K]], processedNumber: Int) = {

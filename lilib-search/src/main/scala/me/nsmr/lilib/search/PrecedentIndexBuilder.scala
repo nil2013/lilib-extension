@@ -1,7 +1,7 @@
 package me.nsmr
 package lilib.search
 
-import akka.actor.{ ActorSystem }
+import akka.actor.{ ActorSystem, PoisonPill }
 import scala.concurrent.Future
 import scala.util.{ Success, Failure }
 import me.nsmr.lilib.core.{ Precedent }
@@ -15,18 +15,25 @@ object PrecedentIndexBuilder {
   def concurrentBuilder[K](implicit sys: ActorSystem): ConcurrentPrecedentIndexBuilder[K] = {
     new ConcurrentPrecedentIndexBuilder[K]
   }
+
+  def concurrentlyBuilding[K, T](body: ConcurrentPrecedentIndexBuilder[K] => T)(implicit sys: ActorSystem): T = {
+    val builder = concurrentBuilder
+    try {
+      body(concurrentBuilder)
+    } finally {
+      builder.close
+    }
+  }
 }
 
 trait PrecedentIndexBuilder[K] {
-  type KV = (K, Precedent)
-  def add(item: KV): Unit
-  def add(list: { def foreach[U](f: KV => U): Unit}): Unit
+  def add(key: K, value: Precedent): Unit
+  def add(list: Iterable[(K, Precedent)]): Unit
+  def add(it: Iterator[(K, Precedent)]): Unit
   def build: PrecedentIndex[K]
 }
 
-final class ConcurrentPrecedentIndexBuilder[K](implicit private val system: ActorSystem) {
-
-  type KV = (K, Precedent)
+final class ConcurrentPrecedentIndexBuilder[K](implicit private val system: ActorSystem) extends PrecedentIndexBuilder[K] {
 
   private[this] val actor = MainActor.getActorRef[K]
 
@@ -34,8 +41,12 @@ final class ConcurrentPrecedentIndexBuilder[K](implicit private val system: Acto
     actor ! MainActor.Messages.AddItem(key, value)
   }
 
-  def add(list: Traversable[KV]): Unit = {
-    actor ! MainActor.Messages.AddItemList(list)
+  def add(list: Iterable[(K, Precedent)]): Unit = {
+    this.add(list.iterator)
+  }
+
+  def add(it: Iterator[(K, Precedent)]): Unit = {
+    actor ! MainActor.Messages.AddItemList(it)
   }
 
   def build: PrecedentIndex[K] = {
@@ -60,4 +71,6 @@ final class ConcurrentPrecedentIndexBuilder[K](implicit private val system: Acto
       }
     }
   }
+
+  def close(): Unit = actor ! PoisonPill
 }

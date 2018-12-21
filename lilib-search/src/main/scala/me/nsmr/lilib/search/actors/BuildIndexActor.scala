@@ -2,7 +2,7 @@ package me.nsmr
 package lilib.search
 package actors
 
-import akka.actor.{ Actor, ActorRef, Props }
+import akka.actor.{ Actor, ActorRef, Props, PoisonPill }
 import java.time.LocalDate
 import me.nsmr.lilib.core._
 
@@ -32,10 +32,15 @@ class BuildDateIndexActor[K] extends Actor {
   def receive = ({
     case Messages.AddDateIndex(date, key: K) => {
       this.index = this.index + (date -> (this.index(date) + key))
+      this.finished += 1
     }
     case Messages.SetTotalCount(cnt) => this.total = cnt
   }: Any --> Unit).andThen { _ =>
-    if(total > 0 && total == finished) Messages.RespondDateIndex(index, finished)
+    printinf(s"total: ${total} / finished: ${finished}")
+    if(total > 0 && total == finished) {
+      context.parent ! Messages.RespondDateIndex(index, finished)
+      self ! PoisonPill
+    }
   }
 }
 
@@ -48,10 +53,14 @@ class BuildCourtIndexActor[K] extends Actor {
   def receive = ({
     case Messages.AddCourtIndex(court, key: K) => {
       this.index = this.index + (court -> (this.index(court) + key))
+      this.finished += 1
     }
     case Messages.SetTotalCount(cnt) => this.total = cnt
   }: Any --> Unit).andThen { _ =>
-    if(total > 0 && total == finished) Messages.RespondCourtIndex(index, finished)
+    if(total > 0 && total == finished) {
+      context.parent ! Messages.RespondCourtIndex(index, finished)
+      self ! PoisonPill
+    }
   }
 }
 
@@ -64,9 +73,13 @@ class BuildCaseNumberIndexActor[K] extends Actor {
   def receive = ({
     case Messages.AddCaseNumberIndex(number, key: K) => {
       this.index = this.index + (number -> (this.index(number) + key))
+      this.finished += 1
     }
     case Messages.SetTotalCount(cnt) => this.total = cnt
   }: Any --> Unit).andThen { _ =>
-    if(total > 0 && total == finished) Messages.RespondCaseNumberIndex(index, finished)
+    if(total > 0 && total == finished) {
+      context.parent ! Messages.RespondCaseNumberIndex(index, finished)
+      self ! PoisonPill
+    }
   }
 }

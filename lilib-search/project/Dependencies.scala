@@ -6,6 +6,11 @@ object Dependencies {
 
   lazy val jsoup     = "org.jsoup" % "jsoup" % "1.11.3"
 
+  object logger {
+    lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
+    lazy val logback      = "ch.qos.logback" % "logback-classic" % "1.2.3"
+  }
+
   object itext {
     lazy val kernel  = "com.itextpdf" % "kernel" % "7.1.4"
     lazy val io      = "com.itextpdf" % "io" % "7.1.4"
