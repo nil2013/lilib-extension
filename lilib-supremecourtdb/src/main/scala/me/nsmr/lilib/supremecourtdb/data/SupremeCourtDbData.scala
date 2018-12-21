@@ -33,7 +33,7 @@ trait SupremeCourtDbData[K] {
 /**
  * 最高裁判例データベースに対応した形式の判例データの集合に対してアクセスする機能を持つことを意味するTraitです。
  */
-trait SupremeCourtDbDataProvider[K] {
+trait SupremeCourtDbDataProvider[K] extends Iterable[SupremeCourtDbData[K]] {
   /**
    * それぞれの判例データに逐次的にアクセスするためのイテレーターです。
    */

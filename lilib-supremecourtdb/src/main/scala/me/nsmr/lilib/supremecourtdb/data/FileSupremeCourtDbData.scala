@@ -122,5 +122,7 @@ class FileSupremeCourtDbDataProvider(val base: File =
 
   def ids: Iterator[String] = base.list.iterator.filter { fname => isCorrectDirectory(fname) }
 
-  def size: Int = base.list.size
+  override def size: Int = base.list.size
+
+  override def toString(): String = s"FileSupremeCourtDbDataProvider(base = ${base.getAbsolutePath})"
 }
