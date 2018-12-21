@@ -32,7 +32,7 @@ class ReferenceAnalyzer {
     final val caseNumber = s"""(平成|昭和)([0-9]+|元)年\\(([^\\(\\).]+?)\\)第([0-9]+)号"""
     final val caseDate = s"""(平成|昭和|同)([0-9]+|元)?年([0-9]+)月([0-9]+)日"""
     final val judgeTypes = s"判決|決定"
-    final lazy val fullRegex = new Regex(s"""(${court})(${caseNumber})?(${caseDate})(${branch})?(${judgeTypes})""".map(charNormalizer),
+    final lazy val fullRegex = new Regex(s"""(${court})(${caseNumber})?・?(${caseDate})(${branch})?(${judgeTypes})""".map(charNormalizer),
       "court", "court.place", "court.level",
       "case", "case.era", "case.year", "case.mark", "case.index",
       "date", "date.era", "date.year", "date.month", "date.date",
@@ -113,7 +113,7 @@ class ReferenceAnalyzer {
                 case Some(year) => y.map(_.copy(year = year))
               }
             } else {
-              CaseYear.Era(info.group("date.era")).map { CaseYear(_, yearNum.get) }
+              yearNum.flatMap { y => CaseYear.Era(info.group("date.era")).map { CaseYear(_, y) }}
             }
           }
           year.map { year =>
@@ -127,6 +127,7 @@ class ReferenceAnalyzer {
           None
         case e: Throwable =>
           logger.warn(s"Something went wrong when parsing '${info.group("date")}' as date", e)
+          logger.warn(info.groupNames.map(n => (n, info.group(n))).mkString(", "))
           None
       }
       val judgeType = try {
