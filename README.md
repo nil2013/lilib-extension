@@ -34,3 +34,8 @@ lilib-supremecourtdb
 ```scala
 libraryDependencies += "me.nsmr" %% "lilib-supremecourtdb" % "0.1.0-SNAPSHOT"
 ```
+
+lilib-search
+```scala
+libraryDependencies += "me.nsmr" %% "lilib-search" % "0.1.0-SNAPSHOT"
+```
