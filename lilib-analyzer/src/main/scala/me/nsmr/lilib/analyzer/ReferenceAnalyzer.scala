@@ -29,8 +29,8 @@ class ReferenceAnalyzer {
     final lazy val courtPlaces = CourtUtil.courts.collect { case c if !c.place.isEmpty => c.place }.mkString("|")
     final lazy val court = s"(${courtPlaces})?(${Court.LEVEL_SHORT.drop(1).mkString("|")})裁|最高裁"
     final lazy val branch = CourtUtil.courts.collect { case court if !court.branch.isEmpty => court.branch }.mkString("|")
-    final val caseNumber = s"""(平成|昭和)([0-9]+)年\\(([^\\(\\).]+?)\\)第([0-9]+)号"""
-    final val caseDate = s"""(平成|昭和|同)([0-9]+)?年([0-9]+)月([0-9]+)日"""
+    final val caseNumber = s"""(平成|昭和)([0-9]+|元)年\\(([^\\(\\).]+?)\\)第([0-9]+)号"""
+    final val caseDate = s"""(平成|昭和|同)([0-9]+|元)?年([0-9]+)月([0-9]+)日"""
     final val judgeTypes = s"判決|決定"
     final lazy val fullRegex = new Regex(s"""(${court})(${caseNumber})?(${caseDate})(${branch})?(${judgeTypes})""".map(charNormalizer),
       "court", "court.place", "court.level",
@@ -86,7 +86,11 @@ class ReferenceAnalyzer {
       val caseNumber = try {
         Option(info.group("case")).flatMap { _ =>
           CaseYear.Era(info.group("case.era")).map { era =>
-            SimpleCaseNumber(CaseYear(era, info.group("case.year").toInt), info.group("case.mark"), info.group("case.index").toInt)
+            val year = info.group("case.year") match {
+              case "元" => 1
+              case n => n.toInt
+            }
+            SimpleCaseNumber(CaseYear(era, year), info.group("case.mark"), info.group("case.index").toInt)
           }
         }
       } catch {
@@ -96,14 +100,21 @@ class ReferenceAnalyzer {
       }
       val date = try {
         Option(info.group("date")).flatMap { _ =>
-          val year = if(info.group("date.era") == "同") {
-            val y = caseNumber.map(_.year)
-            info.group("date.year") match {
-              case null => y
-              case year => y.map(_.copy(year = year.toInt))
+          val year = {
+            val yearNum = info.group("date.year") match {
+              case null => None
+              case "元" => Some(1)
+              case n => Option(n.toInt)
             }
-          } else {
-            CaseYear.Era(info.group("date.era")).map { CaseYear(_, info.group("date.year").toInt) }
+            if(info.group("date.era") == "同") {
+              val y = caseNumber.map(_.year)
+              yearNum match {
+                case None => y
+                case Some(year) => y.map(_.copy(year = year))
+              }
+            } else {
+              CaseYear.Era(info.group("date.era")).map { CaseYear(_, yearNum.get) }
+            }
           }
           year.map { year =>
             year.toJavaYear.atMonth(info.group("date.month").toInt).atDay(info.group("date.date").toInt)
