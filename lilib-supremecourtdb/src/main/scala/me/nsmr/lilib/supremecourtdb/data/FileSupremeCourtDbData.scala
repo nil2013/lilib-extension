@@ -53,7 +53,7 @@ class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData
       }
     }
 
-    override def date: LocalDate = LocalDate.parse((xml \ "date").text.replaceFirst("元", 1), Precedent.dateFormatter)
+    override def date: LocalDate = LocalDate.parse((xml \ "date").text.replaceFirst("元", "1"), Precedent.dateFormatter)
 
     override def court: Court = {
       val txt = (xml \ "court").text
