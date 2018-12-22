@@ -27,7 +27,7 @@ class ReferenceAnalyzer {
   object patterns {
     import scala.util.matching.Regex
     final lazy val courtPlaces = CourtUtil.courts.collect { case c if !c.place.isEmpty => c.place }.mkString("|")
-    final lazy val court = s"(${courtPlaces})?(${Court.LEVEL_SHORT.drop(1).mkString("|")})裁|最高裁"
+    final lazy val court = s"(${courtPlaces})?(${(Court.LEVEL_SHORT.drop(1) ++ Court.LEVEL.drop(1)).mkString("|")})(?:裁|裁判所)|(?:最高裁|最高裁判所)"
     final lazy val branch = CourtUtil.courts.collect { case court if !court.branch.isEmpty => court.branch }.mkString("|")
     final val caseNumber = s"""(平成|昭和)([0-9]+|元)年\\(([^\\(\\).]+?)\\)第([0-9]+)号"""
     final val caseDate = s"""(平成|昭和|同)([0-9]+|元)?年([0-9]+)月([0-9]+)日"""
@@ -59,7 +59,7 @@ class ReferenceAnalyzer {
     val parsed = patterns.fullRegex.findAllMatchIn(normalized).map { info =>
       val court = try {
         Option(info.group("court")).flatMap { court =>
-          val branch = if(info.group("court.branch") == null) { "" } else { info.group("court.branch") }
+          val branch = Option(info.group("court.branch")).mkString
           val (level, place) = info.group("court.level") match {
             case null => (0, "")
             case l => (Court.levelOf(l), info.group("court.place"))
@@ -106,6 +106,7 @@ class ReferenceAnalyzer {
               case "元" => Some(1)
               case n => Option(n.toInt)
             }
+            logger.debug(s"${info.group("date.era")}, ${yearNum}")
             if(info.group("date.era") == "同") {
               val y = caseNumber.map(_.year)
               yearNum match {
@@ -117,7 +118,7 @@ class ReferenceAnalyzer {
             }
           }
           year.map { year =>
-            year.toJavaYear.atMonth(info.group("date.month").toInt).atDay(info.group("date.date").toInt)
+            LocalDate.from(JapaneseDate.of(year.era.javaEra, year.year, info.group("date.month").toInt, info.group("date.date").toInt))
           }
         }
       } catch {
@@ -131,14 +132,14 @@ class ReferenceAnalyzer {
           None
       }
       val judgeType = try {
-        JudgeType
+        Option(info.group("type")).flatMap { JudgeType.get(_) }
       } catch {
         case e: Throwable => {
-          logger.warn(s"Something went wrong when parsing '' as judgeType", e.toString)
+          logger.warn(s"Something went wrong when parsing '${info.group("type")}' as judgeType", e.toString)
           None
         }
       }
-      PrecedentReference(caseNumber, court, date, None)
+      PrecedentReference(caseNumber, court, date, judgeType)
     }
     parsed.toArray
   }

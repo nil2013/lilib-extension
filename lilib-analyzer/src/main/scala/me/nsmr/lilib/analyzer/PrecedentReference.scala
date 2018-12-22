@@ -15,6 +15,7 @@ case class PrecedentReference(caseNumber: Option[CaseNumber], court: Option[Cour
   import PrecedentReference._
 
   override def toString = {
-    s"${court.map(_.shortName).mkString}${caseNumber.mkString}${date.map(_.format(dateFormatter)).mkString("・", "", "")}${court.map(_.branch).mkString}${judgeType.mkString}"
+    val splitter = if(caseNumber.isDefined && date.isDefined) {"・"} else {""}
+    s"${court.map(_.shortName).mkString}${caseNumber.mkString}${ splitter }${date.map(_.format(dateFormatter)).mkString}${court.map(_.branch).mkString}${judgeType.mkString}"
   }
 }
