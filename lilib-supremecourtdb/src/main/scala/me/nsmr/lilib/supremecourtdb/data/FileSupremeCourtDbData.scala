@@ -5,6 +5,7 @@ package data
 import java.io.{ File, IOException }
 import java.time.LocalDate
 import scala.xml.XML
+import scala.util.Try
 import com.itextpdf.kernel.pdf.{PdfReader, PdfDocument}
 import me.nsmr.utils.PdfTool
 import me.nsmr.lilib.utils.{ Parsers, CaseNumberFormatException, CourtFormatException }
@@ -53,7 +54,7 @@ class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData
       }
     }
 
-    override def date: LocalDate = LocalDate.parse((xml \ "date").text.replaceFirst("元", "1"), Precedent.dateFormatter)
+    override def date: LocalDate = LocalDate.parse((xml \ "date").text.replaceFirst("元年", "1年"), Precedent.dateFormatter)
 
     override def court: Court = {
       val txt = (xml \ "court").text
@@ -71,16 +72,17 @@ class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData
     override def result: String = (xml \ "result").text
     override def book: String = (xml \ "reporter").text
 
-    override def previousCourt: Option[Court] = (xml \ "previous" \ "court").text.trim match {
-      case "" => None
-      case some => Parsers.court.parse(some) match {
-        case Some(c) => Option(c)
-        case None => throw new CourtFormatException(s"court format is inappropriate: ${some}")
-      }
-    }
+    override def previousCourt: Option[Court] = Option((xml \ "previous" \ "court")).map(_.text.trim).collect {
+      case txt if !txt.isEmpty => Parsers.court.parse(txt)
+    }.flatten
 
-    override def previousNumber: Option[CaseNumber] = ???
-    override def previousDate: Option[LocalDate] = ???
+    override def previousNumber: Option[CaseNumber] = Option((xml \ "previous" \ "number")).map(_.text.trim).collect {
+      case txt if !txt.isEmpty => Parsers.caseNumber.parse(txt)
+    }.flatten
+
+    override def previousDate: Option[LocalDate] = Option((xml \ "previous" \ "date")).map(_.text.trim).collect {
+      case txt if !txt.isEmpty => Try { LocalDate.parse(txt.replaceFirst("元年", "1年"), Precedent.dateFormatter) }.toOption
+    }.flatten
 
     override def theme: String = (xml \ "theme").text.trim
     override def summary: String = (xml \ "summary").text.trim
