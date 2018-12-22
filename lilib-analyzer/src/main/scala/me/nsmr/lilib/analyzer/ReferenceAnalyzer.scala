@@ -106,7 +106,6 @@ class ReferenceAnalyzer {
               case "元" => Some(1)
               case n => Option(n.toInt)
             }
-            logger.debug(s"${info.group("date.era")}, ${yearNum}")
             if(info.group("date.era") == "同") {
               val y = caseNumber.map(_.year)
               yearNum match {
