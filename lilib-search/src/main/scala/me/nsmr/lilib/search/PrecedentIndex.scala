@@ -17,14 +17,14 @@ class PrecedentIndex[K] (
   def numbers: Set[CaseNumber] = indexByNumber.keySet
   def courts: Set[Court] = indexByCourt.keySet
 
-  def getPrecedents(date: LocalDate): Set[K] = this.indexByDate(date)
-  def getPrecedents(number: CaseNumber): Set[K] = this.indexByNumber(number)
+  def getPrecedents(date: LocalDate): Set[K] = this.indexByDate.get(date).getOrElse(Set.empty)
+  def getPrecedents(number: CaseNumber): Set[K] = this.indexByNumber.get(number).getOrElse(Set.empty)
   def getPrecedents(court: Court): Set[K] = {
     if(court.branch == null || court.branch.isEmpty) {
       val courts = this.courts.filter { c =>
         ( c.place == court.place && c.level == court.level )
       }
-      courts.flatMap(this.indexByCourt(_))
+      courts.flatMap(this.indexByCourt.get(_).getOrElse(Set.empty))
     } else {
       this.indexByCourt(court)
     }
