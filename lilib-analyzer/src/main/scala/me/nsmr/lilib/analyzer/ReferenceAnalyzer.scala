@@ -29,7 +29,7 @@ class ReferenceAnalyzer {
     final lazy val courtPlaces = CourtUtil.courts.collect { case c if !c.place.isEmpty => c.place }.mkString("|")
     final lazy val court = s"(${courtPlaces})?(${(Court.LEVEL_SHORT.drop(1) ++ Court.LEVEL.drop(1)).mkString("|")})(?:裁|裁判所)|(?:最高裁|最高裁判所)"
     final lazy val branch = CourtUtil.courts.collect { case court if !court.branch.isEmpty => court.branch }.mkString("|")
-    final val caseNumber = s"""(平成|昭和)([0-9]+|元)年\\(([^\\(\\).]+?)\\)第([0-9]+)号"""
+    final val caseNumber = s"""(平成|昭和)([0-9]+|元)年(\\([^\\(\\).]+?\\))第([0-9]+)号"""
     final val caseDate = s"""(平成|昭和|同)([0-9]+|元)?年([0-9]+)月([0-9]+)日"""
     final val judgeTypes = s"判決|決定"
     final lazy val fullRegex = new Regex(s"""(${court})(${caseNumber})?・?(${caseDate})(${branch})?(${judgeTypes})""".map(charNormalizer),
