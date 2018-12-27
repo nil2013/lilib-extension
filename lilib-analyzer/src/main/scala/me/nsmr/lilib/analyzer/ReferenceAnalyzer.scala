@@ -29,12 +29,12 @@ class ReferenceAnalyzer {
     final lazy val courtPlaces = CourtUtil.courts.collect { case c if !c.place.isEmpty => c.place }.mkString("|")
     final lazy val court = s"(${courtPlaces})?(${(Court.LEVEL_SHORT.drop(1) ++ Court.LEVEL.drop(1)).mkString("|")})(?:裁|裁判所)|(?:最高裁|最高裁判所)"
     final lazy val branch = CourtUtil.courts.collect { case court if !court.branch.isEmpty => court.branch }.mkString("|")
-    final val caseNumber = s"""(平成|昭和)([0-9]+|元)年(\\([^\\(\\).]+?\\))第([0-9]+)号"""
+    final val caseNumber = s"""(平成|昭和)([0-9]+|元)年?(([^\\d]?)\\(([^\\(\\)]+)\\)([^\\d]?))第?([0-9]+)号"""
     final val caseDate = s"""(平成|昭和|同)([0-9]+|元)?年([0-9]+)月([0-9]+)日"""
     final val judgeTypes = s"判決|決定"
     final lazy val fullRegex = new Regex(s"""(${court})(${caseNumber})?・?(${caseDate})(${branch})?(${judgeTypes})""".map(charNormalizer),
       "court", "court.place", "court.level",
-      "case", "case.era", "case.year", "case.mark", "case.index",
+      "case", "case.era", "case.year", "case.mark", "case.mark.pre", "case.mark.mark", "case.mark.suf", "case.index",
       "date", "date.era", "date.year", "date.month", "date.date",
       "court.branch",
       "type"
@@ -90,7 +90,16 @@ class ReferenceAnalyzer {
               case "元" => 1
               case n => n.toInt
             }
-            SimpleCaseNumber(CaseYear(era, year), info.group("case.mark"), info.group("case.index").toInt)
+            val mark = {
+              val mark = CaseMark(info.group("case.mark.mark"))
+              (info.group("case.mark.pre"), info.group("case.mark.suf")) match {
+                case (p, _) if !p.isEmpty => mark.withPrefix(p)
+                case (_, s) if !s.isEmpty => mark.withSuffix(s)
+                case (p, s) if p.isEmpty && s.isEmpty => mark
+                case _ => throw new UnsupportedOperationException(s"mark '${info.group("case.mark")}' has both prefix and suffix")
+              }
+            }
+            SimpleCaseNumber(CaseYear(era, year), mark, info.group("case.index").toInt)
           }
         }
       } catch {
