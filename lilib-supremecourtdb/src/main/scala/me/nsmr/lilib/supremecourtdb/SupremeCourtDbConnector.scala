@@ -96,3 +96,16 @@ object SupremeCourtDbConnector extends SupremeCourtDbLikeConnector(
     ???
   }
 }
+
+object IntellectualPropertyHighCourtDbConnector extends SupremeCourtDbLikeConnector("http://www.ip.courts.go.jp/app/hanrei_jp/detail") {
+  import SupremeCourtDbLikeConnector._
+
+  object Keys {
+    val parties = "当事者"
+    val all = Set(parties)
+  }
+
+  override def specialRowParser: Parser = super.specialRowParser.orElse({
+    case (Keys.parties, elem) => (Keys.parties, elem.select("div.list5").map(_.text.powerTrim).toArray)
+  }: Parser)
+}
