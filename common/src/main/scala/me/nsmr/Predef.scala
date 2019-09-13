@@ -55,7 +55,7 @@ object `package` {
     }
   }
 
-  def printinf(str: String): Unit = print(s"\r\\033[94m${str}\r")
+  def printinf(str: String): Unit = print(s"\r\u001b[94m${str}\r")
 
   lazy val indicator = "|/-\\".toArray
 
@@ -105,7 +105,7 @@ object Colors {
   def coloring[A](color: Color)(body: => A): A = coloring(color, System.out)(body)
 
   sealed class Color(_ansi: Int) {
-    def ansi: String = s"\\u001b[${_ansi}m"
+    def ansi: String = s"\u001b[${_ansi}m"
     def start(stream: PrintStream) = stream.print(ansi)
     def reset(stream: PrintStream) = Colors.Reset.start(stream)
     def using[A](stream: PrintStream)(body: PrintStream => A): A = coloring(this, stream)(body(stream))
