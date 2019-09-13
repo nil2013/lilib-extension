@@ -37,7 +37,7 @@ class CourtUtil(val courts: Set[Court]) {
             } catch {
               case e: NumberFormatException => e.printStackTrace; None
             }
-          case arr => println(arr.deep); None
+          case arr => println(arr.mkString("Array(", ", ", ")")); None
         }.toSet
       }
     }

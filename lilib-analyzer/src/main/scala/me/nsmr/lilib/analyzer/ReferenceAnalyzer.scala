@@ -11,6 +11,8 @@ class ReferenceAnalyzer {
 
   lazy val logger = Logger[ReferenceAnalyzer]
 
+  private[this] var last: (Option[CaseYear.Era], Option[Int], Option[Court]) = (None, None, None)
+
   private[this] final val charNormalizer: PartialFunction[Char, Char] = Map (
     '（' -> '(',
     '）' -> ')',
@@ -27,12 +29,12 @@ class ReferenceAnalyzer {
   object patterns {
     import scala.util.matching.Regex
     final lazy val courtPlaces = CourtUtil.courts.collect { case c if !c.place.isEmpty => c.place }.mkString("|")
-    final lazy val court = s"(${courtPlaces})?(${(Court.LEVEL_SHORT.drop(1) ++ Court.LEVEL.drop(1)).mkString("|")})(?:裁|裁判所)|(?:最高裁|最高裁判所)"
-    final lazy val branch = CourtUtil.courts.collect { case court if !court.branch.isEmpty => court.branch }.mkString("|")
-    final val caseNumber = s"""(平成|昭和)([0-9]+|元)年?(([^\\d]?)\\(([^\\(\\)]+)\\)([^\\d]?))第?([0-9]+)号"""
+    final lazy val court = s"(${courtPlaces}|同)?(${(Court.LEVEL_SHORT.drop(1) ++ Court.LEVEL.drop(1)).mkString("|")}|同)(?:裁|裁判所)|(?:最高裁|最高裁判所)"
+    final lazy val branch = CourtUtil.courts.collect { case court if !court.branch.isEmpty => court.branch.map(charNormalizer) }.mkString("|")
+    final val caseNumber = s"""(平成|昭和)([0-9]+|元)年?(([^\\d]?)\\(([^\\(\\)]+)\\)([^\\d第]?))第?([0-9]+)号"""
     final val caseDate = s"""(平成|昭和|同)([0-9]+|元)?年([0-9]+)月([0-9]+)日"""
     final val judgeTypes = s"判決|決定"
-    final lazy val fullRegex = new Regex(s"""(${court})(${caseNumber})?・?(${caseDate})(${branch})?(${judgeTypes})""".map(charNormalizer),
+    final lazy val fullRegex = new Regex(s"""(${court})?(${caseNumber})?・?(${caseDate})(${branch})?(${judgeTypes})""",
       "court", "court.place", "court.level",
       "case", "case.era", "case.year", "case.mark", "case.mark.pre", "case.mark.mark", "case.mark.suf", "case.index",
       "date", "date.era", "date.year", "date.month", "date.date",
@@ -41,7 +43,35 @@ class ReferenceAnalyzer {
     )
   }
 
-  def analyze(input: String): Array[PrecedentReference] = normalize(input).flatMap(analyzeMain)
+  def reset: Unit = {
+    this.last = (None, None, None)
+  }
+
+  def lastEra: Option[CaseYear.Era] = this.last._1
+
+  def lastYear: Option[CaseYear] = {
+    this.last match {
+      case (Some(era), Some(year), _) => Option(CaseYear(era, year))
+      case _ => None
+    }
+  }
+
+  def lastCourt: Option[Court] = this.last._3
+
+  protected def updateLastEra(era: CaseYear.Era): Unit = { this.last = this.last.copy(_1 = Option(era)) }
+
+  protected def updateLastYear(year: CaseYear): Unit = {
+    this.last = this.last.copy(_1 = Option(year.era), _2 = Option(year.year))
+  }
+
+  protected def updateLastCourt(court: Court): Unit = {
+    this.last = this.last.copy(_3 = Option(court))
+  }
+
+  def analyze(input: String): Array[PrecedentReference] = {
+    reset
+    normalize(input).flatMap(analyzeMain)
+  }
 
   def normalize(input: String): Array[String] = {
     input.lines.map(_.collect ( charNormalizer )).filterNot(
@@ -60,22 +90,39 @@ class ReferenceAnalyzer {
       val court = try {
         Option(info.group("court")).flatMap { court =>
           val branch = Option(info.group("court.branch")).mkString
-          val (level, place) = info.group("court.level") match {
-            case null => (0, "")
-            case l => (Court.levelOf(l), info.group("court.place"))
+          // val (level, place) = info.group("court.level") match {
+          //   case null => (0, "")
+          //   case l => (Court.levelOf(l), info.group("court.place"))
+          // }
+          val (level, place) = {
+            (info.group("court.level"), info.group("court.place"), branch) match {
+              case ("同", _, _) => this.lastCourt.map { c => (c.level, c.place) }.get
+              case (_, "同", _) => this.lastCourt.map { c => (c.level, c.place) }.get
+              case (null, _, _) => (0, "")
+              case (l, null, b) => {
+                if(b.endsWith("法廷") && Court.levelOf(l) == 1) {
+                  (0, "")
+                } else {
+                  (Court.levelOf(l), "")
+                }
+              }
+              case (l, p, _) => (Court.levelOf(l), p)
+            }
           }
           if(
             ((place == null || place.isEmpty) && level != 0)
             || (level != 0 && !branch.isEmpty && !branch.endsWith("支部"))
           ) {
             printinf("")
-            logger.warn(s"strange court found: ${court} in ${info.source}")
+            logger.warn(s"strange court found: ${court} in ${info.source} (interpreted as: [level=${level}, place='${place}', branch='${branch}'], while the last court found is '${this.lastCourt}')")
             None
           } else {
-            CourtUtil.courts.find ( c => c.level == level && c.place == place && c.branch == branch) match {
+            val obj = CourtUtil.courts.find ( c => c.level == level && c.place == place && c.branch == branch) match {
               case some: Some[Court] => some
               case None => Option(SimpleCourt(place, level, branch))
             }
+            obj.foreach(updateLastCourt)
+            obj
           }
         }
       } catch {
@@ -99,7 +146,9 @@ class ReferenceAnalyzer {
                 case _ => throw new UnsupportedOperationException(s"mark '${info.group("case.mark")}' has both prefix and suffix")
               }
             }
-            SimpleCaseNumber(CaseYear(era, year), mark, info.group("case.index").toInt)
+            val caseYear = CaseYear(era, year)
+            updateLastYear(caseYear)
+            SimpleCaseNumber(caseYear, mark, info.group("case.index").toInt)
           }
         }
       } catch {
@@ -116,10 +165,14 @@ class ReferenceAnalyzer {
               case n => Option(n.toInt)
             }
             if(info.group("date.era") == "同") {
-              val y = caseNumber.map(_.year)
+              val y = this.lastYear
               yearNum match {
                 case None => y
-                case Some(year) => y.map(_.copy(year = year))
+                case Some(year) => {
+                  val obj = y.map(_.copy(year = year))
+                  obj.foreach(updateLastYear)
+                  obj
+                }
               }
             } else {
               yearNum.flatMap { y => CaseYear.Era(info.group("date.era")).map { CaseYear(_, y) }}
