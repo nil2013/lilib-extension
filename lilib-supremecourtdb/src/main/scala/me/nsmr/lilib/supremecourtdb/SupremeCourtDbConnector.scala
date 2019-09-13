@@ -4,7 +4,7 @@ package supremecourtdb
 
 import org.jsoup.Jsoup
 import org.jsoup.HttpStatusException
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 object SupremeCourtDbConnector {
   val SUPREME_COURT_DB_DETAIL_BASE_URL = "http://www.courts.go.jp/app/hanrei_jp/detail2"
@@ -58,10 +58,11 @@ class SupremeCourtDbConnector() {
   def getPrecedentMapById(id: Int): Option[Map[PrecedentKey, String]] = {
     try {
       val doc = Jsoup.connect(getUrlOf(id)).get
-      val elements = doc.select("div.dlist").iterator.flatMap(_.children).filter(x => x.tagName == "div" && x.className.isEmpty)
+      val elements = doc.select("div.dlist").iterator.asScala.flatMap(
+        _.children.asScala).filter(x => x.tagName == "div" && x.className.isEmpty)
       Some(
         elements.collect {
-          case e if !(e.children.size < 2) => PrecedentKey(e.children.head.text.trim) match {
+          case e if !(e.children.size < 2) => PrecedentKey(e.children.first.text.trim) match {
             case PrecedentKey.Content => (PrecedentKey.Content, e.selectFirst("a").attr("abs:href"))
             case key => (key, e.child(2).text.trim)
           }

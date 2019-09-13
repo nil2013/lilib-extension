@@ -55,7 +55,7 @@ object `package` {
     }
   }
 
-  def printinf(str: String): Unit = print(s"\r\033[94m${str}\r")
+  def printinf(str: String): Unit = print(s"\r\u001b[94m${str}\r")
 
   lazy val indicator = "|/-\\".toArray
 

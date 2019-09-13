@@ -101,5 +101,7 @@ class DetailPage(val id: Int, val pageType: Int = 2) {
       }.toMap
     )
   }
+
+  override def toString(): String = s"DetailPage(id = ${id}, pageType = ${pageType})"
 }
 

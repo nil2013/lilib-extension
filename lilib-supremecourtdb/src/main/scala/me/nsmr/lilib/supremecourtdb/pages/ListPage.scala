@@ -51,16 +51,23 @@ object ListPage {
 
     def asQuery: String = {
       import URLEncoder.encode
-      (courtToMap(court)
+
+      ((courtToMap(court)
         ++ caseNumberToMap(caseNumber)
         ++ dateSpecifier.asMap
-        ++ texts.zipWithIndex.map { case (text, idx) =>
-        s"text${idx + 1}" -> text
-      }.toMap + ("action_search" -> "検索")
-        ).map {
-        case (key, value) =>
-          s"filter[${encode(key, "UTF-8")}]=${encode(value, "UTF-8")}"
-      }.mkString("&")
+        ++ (
+        texts.zipWithIndex.map {
+          case (text, idx) =>
+            s"text${idx + 1}" -> text
+        }
+        ).toMap)
+        .map {
+          case (key, value) =>
+            (s"filter[${encode(key, "UTF-8")}]", s"${encode(value, "UTF-8")}")
+        }
+        + ("action_search" -> "検索"))
+        .map { case (k, v) => s"$k=$v" }
+        .mkString("&")
     }
   }
 
@@ -121,6 +128,8 @@ object ListPage {
   }
 
   private lazy val DETAIL_URL_PATTERN = s"${DetailPage.SUPREME_COURT_DB_DETAIL_BASE_URL}[0-9]+\\?id=([0-9]+)".r
+
+  private lazy val TOTAL_CASE_PATTERN = s"([0-9]+)件中[0-9]+～[0-9]+件を表示".r
 }
 
 class ListPage(
@@ -173,6 +182,15 @@ class ListPage(
   }
 
   def size: Int = content._1.size
+
+  lazy val total: Int = {
+    val text = doc.selectFirst("h4.s_title_l")
+    println(text)
+    ListPage.TOTAL_CASE_PATTERN.findFirstMatchIn(doc.selectFirst("h4.s_title_l").text) match {
+      case None => -1
+      case Some(m) => m.group(1).toInt
+    }
+  }
 
 }
 
