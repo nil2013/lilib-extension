@@ -38,7 +38,7 @@ object ListPage {
                          ) {
     private def courtToMap(court: Option[Court]): Map[String, String] = Map(
       "courtName" -> court.map(_.place).getOrElse(""),
-      "courtType" -> court.map(_.level.toString).getOrElse(""),
+      "courtType" -> court.map(c => Court.LEVEL(c.level)).getOrElse(""),
       "branchName" -> court.map(_.branch).getOrElse("")
     )
 
@@ -63,7 +63,7 @@ object ListPage {
         ).toMap)
         .map {
           case (key, value) =>
-            (s"filter[${encode(key, "UTF-8")}]", s"${encode(value, "UTF-8")}")
+            (encode(s"filter[$key]", "UTF-8"), encode(s"$value", "UTF-8"))
         }
         + ("action_search" -> "検索"))
         .map { case (k, v) => s"$k=$v" }
