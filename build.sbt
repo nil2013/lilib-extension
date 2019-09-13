@@ -1,7 +1,7 @@
 import Dependencies._
 
 ThisBuild / organization := "me.nsmr"
-ThisBuild / scalaVersion := "2.12.6"
+ThisBuild / scalaVersion := "2.13.0"
 ThisBuild / version      := "0.1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).
