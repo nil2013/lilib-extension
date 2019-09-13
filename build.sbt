@@ -4,12 +4,12 @@ ThisBuild / organization := "me.nsmr"
 ThisBuild / scalaVersion := "2.13.0"
 ThisBuild / version      := "0.1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).
-  aggregate(analyzer, search, supremecourtdb)
+// lazy val root = (project in file(".")).dependsOn(common).
+//   aggregate(analyzer, search, supremecourtdb)
 
 lazy val common = (project in file("common")).
   settings(
-    name := "lilib-extension-common"
+    name := "common"
   )
 
 lazy val analyzer = (project in file("lilib-analyzer")).

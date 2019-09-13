@@ -19,7 +19,6 @@ object Dependencies {
 
   object lilib {
     lazy val core     = "me.nsmr" %% "lilib" % "0.1.0-SNAPSHOT"
-    lazy val base     = "me.nsmr" %% "lilib-extension-base"  % "0.1.0-SNAPSHOT"
     lazy val analyzer = "me.nsmr" %% "lilib-analyzer" % "0.1.0-SNAPSHOT"
     lazy val search   = "me.nsmr" %% "lilib-search" % "0.1.0-SNAPSHOT"
     lazy val supremecourtdb = "me.nsmr" %% "lilib-supremecourtdb" % "0.1.0-SNAPSHOT"
