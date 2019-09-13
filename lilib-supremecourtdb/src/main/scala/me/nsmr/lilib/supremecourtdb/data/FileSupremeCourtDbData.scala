@@ -2,14 +2,15 @@ package me.nsmr
 package lilib.supremecourtdb
 package data
 
-import java.io.{ File, IOException }
+import java.io.{File, IOException}
 import java.time.LocalDate
-import scala.xml.XML
+
+import scala.xml.{Elem, XML}
 import scala.util.Try
-import com.itextpdf.kernel.pdf.{PdfReader, PdfDocument}
+import com.itextpdf.kernel.pdf.{PdfDocument, PdfReader}
 import me.nsmr.utils.PdfTool
-import me.nsmr.lilib.utils.{ Parsers, CaseNumberFormatException, CourtFormatException }
-import me.nsmr.lilib.core.{ CaseNumber, Court, JudgeType, Precedent }
+import me.nsmr.lilib.utils.{CaseNumberFormatException, CourtFormatException, Parsers}
+import me.nsmr.lilib.core.{CaseNumber, Court, JudgeType, Precedent}
 
 /**
  * ディレクトリにまとめられた判例データにアクセスするためのクラス
@@ -42,7 +43,7 @@ class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData
 
   override def asPrecedent: SupremeCourtDbPrecedent[String] = new SupremeCourtDbPrecedent[String] {
 
-    lazy val xml = XML.loadFile(data.infoFile)
+    lazy val xml: Elem = XML.loadFile(data.infoFile)
 
     def id: String = data.id
 
