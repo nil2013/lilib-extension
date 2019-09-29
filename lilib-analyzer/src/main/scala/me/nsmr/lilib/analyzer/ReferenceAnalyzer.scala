@@ -11,7 +11,7 @@ class ReferenceAnalyzer {
 
   lazy val logger = Logger[ReferenceAnalyzer]
 
-  private[this] var last: (Option[CaseYear.Era], Option[Int], Option[Court]) = (None, None, None)
+  private[this] var last: (Option[JapaneseYear.Era], Option[Int], Option[Court]) = (None, None, None)
 
   private[this] final val charNormalizer: PartialFunction[Char, Char] = Map (
     '（' -> '(',
@@ -47,20 +47,22 @@ class ReferenceAnalyzer {
     this.last = (None, None, None)
   }
 
-  def lastEra: Option[CaseYear.Era] = this.last._1
+  def lastEra: Option[JapaneseYear.Era] = this.last._1
 
-  def lastYear: Option[CaseYear] = {
+  def lastYear: Option[JapaneseYear] = {
     this.last match {
-      case (Some(era), Some(year), _) => Option(CaseYear(era, year))
+      case (Some(era), Some(year), _) => Option(JapaneseYear(era, year))
       case _ => None
     }
   }
 
   def lastCourt: Option[Court] = this.last._3
 
-  protected def updateLastEra(era: CaseYear.Era): Unit = { this.last = this.last.copy(_1 = Option(era)) }
+  protected def updateLastEra(era: JapaneseYear.Era): Unit = {
+    this.last = this.last.copy(_1 = Option(era))
+  }
 
-  protected def updateLastYear(year: CaseYear): Unit = {
+  protected def updateLastYear(year: JapaneseYear): Unit = {
     this.last = this.last.copy(_1 = Option(year.era), _2 = Option(year.year))
   }
 
@@ -132,7 +134,7 @@ class ReferenceAnalyzer {
       }
       val caseNumber = try {
         Option(info.group("case")).flatMap { _ =>
-          CaseYear.Era(info.group("case.era")).map { era =>
+          JapaneseYear.Era(info.group("case.era")).map { era =>
             val year = info.group("case.year") match {
               case "元" => 1
               case n => n.toInt
@@ -146,9 +148,9 @@ class ReferenceAnalyzer {
                 case _ => throw new UnsupportedOperationException(s"mark '${info.group("case.mark")}' has both prefix and suffix")
               }
             }
-            val caseYear = CaseYear(era, year)
-            updateLastYear(caseYear)
-            SimpleCaseNumber(caseYear, mark, info.group("case.index").toInt)
+            val jpYear = JapaneseYear(era, year)
+            updateLastYear(jpYear)
+            SimpleCaseNumber(jpYear, mark, info.group("case.index").toInt)
           }
         }
       } catch {
@@ -175,7 +177,10 @@ class ReferenceAnalyzer {
                 }
               }
             } else {
-              yearNum.flatMap { y => CaseYear.Era(info.group("date.era")).map { CaseYear(_, y) }}
+              yearNum.flatMap { y => JapaneseYear.Era(info.group("date.era")).map {
+                JapaneseYear(_, y)
+              }
+              }
             }
           }
           year.map { year =>

@@ -11,22 +11,23 @@ import java.util.Date
 import org.jsoup.nodes.Element
 import scala.collection.JavaConverters._
 
-import me.nsmr.lilib.core.{CaseMark, CaseNumber, CaseYear, Court}
+import me.nsmr.lilib.core.{CaseMark, CaseNumber, JapaneseYear, Court}
 import org.jsoup.Jsoup
 
 object ListPage {
 
-  case class JapaneseDate(year: CaseYear, month: Int, date: Int)
+  case class JapaneseDate(year: JapaneseYear, month: Int, date: Int)
 
   object SearchFilter {
+    def apply(dateSpecifier: DateSpecifier): SearchFilter = {
+      this.apply(None, None, dateSpecifier)
+    }
+
     def all = SearchFilter(
-      None,
-      None,
       SpanSpecifier(
-        JapaneseDate(CaseYear(CaseYear.Era.Showa, 1), 1, 1),
-        JapaneseDate(CaseYear(CaseYear.Era.Reiwa, 99), 12, 31)
-      ),
-      Nil
+        JapaneseDate(JapaneseYear(JapaneseYear.Era.Showa, 1), 1, 1),
+        JapaneseDate(JapaneseYear(JapaneseYear.Era.Reiwa, 99), 12, 31)
+      )
     )
   }
 
@@ -34,7 +35,7 @@ object ListPage {
                            court: Option[Court],
                            caseNumber: Option[CaseNumber],
                            dateSpecifier: DateSpecifier,
-                           texts: List[String],
+                           texts: List[String] = Nil,
                          ) {
     private def courtToMap(court: Option[Court]): Map[String, String] = Map(
       "courtName" -> court.map(_.place).getOrElse(""),
