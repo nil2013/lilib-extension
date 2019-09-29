@@ -5,8 +5,8 @@ package sample
 import akka.actor._
 import me.nsmr.lilib
 import lilib.core.Precedent
-import lilib.supremecourtdb.data.{ SupremeCourtDbDataProvider, FileSupremeCourtDbDataProvider }
-import lilib.search.{ PrecedentIndex, PrecedentIndexBuilder, ConcurrentPrecedentIndexBuilder }
+import lilib.supremecourtdb.data.{SupremeCourtDbDataProvider, FileSupremeCourtDbDataProvider}
+import lilib.search.{PrecedentIndex, PrecedentIndexBuilder, ConcurrentPrecedentIndexBuilder}
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.typesafe.scalalogging.Logger
 

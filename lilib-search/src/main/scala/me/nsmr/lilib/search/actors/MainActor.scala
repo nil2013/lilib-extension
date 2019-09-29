@@ -5,7 +5,7 @@ package actors
 import java.time.LocalDate
 import scala.util.Try
 import com.typesafe.scalalogging.Logger
-import akka.actor.{ Props, ActorRef, ActorRefFactory, Actor }
+import akka.actor.{Props, ActorRef, ActorRefFactory, Actor}
 import me.nsmr.lilib.core._
 
 private[search] object MainActor {
@@ -17,21 +17,31 @@ private[search] object MainActor {
   def props[K]: Props = Props[MainActor[K]]
 
   object Messages {
+
     case class AddItem[K](key: K, value: Precedent)
+
     case class AddItemList[K](it: Iterator[(K, Precedent)])
+
     case object RequestResult
+
     case class RespondIndexes[K](
-      dateIndex: Map[LocalDate, Set[K]],
-      caseNumberIndex: Map[CaseNumber, Set[K]],
-      courtIndex: Map[Court, Set[K]]
-    )
+                                  dateIndex: Map[LocalDate, Set[K]],
+                                  caseNumberIndex: Map[CaseNumber, Set[K]],
+                                  courtIndex: Map[Court, Set[K]]
+                                )
+
     case class RespondDateIndex[K](map: Map[LocalDate, Set[K]])
+
     case class RespondCaseNumberIndex[K](map: Map[CaseNumber, Set[K]])
+
     case class RespondCourtIndex[K](map: Map[Court, Set[K]])
+
   }
+
 }
 
 private class MainActor[K] extends Actor {
+
   import MainActor.Messages._
 
   private[this] lazy val logger = Logger[MainActor[K]]
@@ -54,7 +64,7 @@ private class MainActor[K] extends Actor {
     case BuildIndexActors.Messages.RespondCourtIndex(response: Map[_, Set[K]], count) => addCourtIndex(response, count)
     case RequestResult => requestResult(sender)
   }: PartialFunction[Any, Unit]).andThen { _ =>
-    if(countOfWaitingDate == 0
+    if (countOfWaitingDate == 0
       && countOfWaitingCaseNumber == 0
       && countOfWaitingCourt == 0
     ) {
@@ -97,7 +107,8 @@ private class MainActor[K] extends Actor {
 
     var (countOfSentDates, countOfSentNumbers, countOfSentCourts) = (0, 0, 0)
 
-    while(it.hasNext) { val (key, value) = it.next
+    while (it.hasNext) {
+      val (key, value) = it.next
       try {
         dateActor ! BuildIndexActors.Messages.AddDateIndex(value.date, key)
         countOfSentDates = countOfSentDates + 1
@@ -135,7 +146,7 @@ private class MainActor[K] extends Actor {
   }
 
   def addDateIndex(response: Map[LocalDate, Set[K]], processedNumber: Int) = {
-    if(this.countOfWaitingDate > 0) {
+    if (this.countOfWaitingDate > 0) {
       this.indexByDate = this.indexByDate ++ response
       this.countOfWaitingDate -= processedNumber
     }

@@ -5,10 +5,10 @@ lazy val root = (project in file(".")).
     inThisBuild(List(
       organization := "me.nsmr",
       scalaVersion := "2.12.5",
-      version      := "0.1.0-SNAPSHOT"
+      version := "0.1.0-SNAPSHOT"
     )),
     name := "sample",
-    libraryDependencies ++= List (
+    libraryDependencies ++= List(
       scalaTest % Test,
       lilib.core,
       lilib.analyzer,

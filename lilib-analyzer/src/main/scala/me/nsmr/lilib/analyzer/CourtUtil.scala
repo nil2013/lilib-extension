@@ -1,9 +1,9 @@
 package me.nsmr
 package lilib.analyzer
 
-import java.io.{ BufferedReader, File, FileInputStream, InputStream }
+import java.io.{BufferedReader, File, FileInputStream, InputStream}
 import scala.util.matching.Regex
-import me.nsmr.lilib.core.{ Court, SimpleCourt }
+import me.nsmr.lilib.core.{Court, SimpleCourt}
 
 object CourtUtil {
 
@@ -19,6 +19,7 @@ object CourtUtil {
 }
 
 class CourtUtil(val courts: Set[Court]) {
+
   import CourtUtil._
 
   def this(is: InputStream) = {

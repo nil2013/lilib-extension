@@ -15,7 +15,8 @@ import me.nsmr.lilib.core.{CaseNumber, Court, JudgeType, Precedent}
 /**
  * ディレクトリにまとめられた判例データにアクセスするためのクラス
  */
-class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData[String] { data =>
+class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData[String] {
+  data =>
 
   /**
    * 当該判例データに対応するPDFファイルを取得します。
@@ -70,7 +71,9 @@ class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData
     lazy val content: Option[String] = data.getContent
 
     override def name: String = (xml \ "name").text
+
     override def result: String = (xml \ "result").text
+
     override def book: String = (xml \ "reporter").text
 
     override def previousCourt: Option[Court] = Option((xml \ "previous" \ "court")).map(_.text.trim).collect {
@@ -82,11 +85,15 @@ class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData
     }.flatten
 
     override def previousDate: Option[LocalDate] = Option((xml \ "previous" \ "date")).map(_.text.trim).collect {
-      case txt if !txt.isEmpty => Try { LocalDate.parse(txt.replaceFirst("元年", "1年"), Precedent.dateFormatter) }.toOption
+      case txt if !txt.isEmpty => Try {
+        LocalDate.parse(txt.replaceFirst("元年", "1年"), Precedent.dateFormatter)
+      }.toOption
     }.flatten
 
     override def theme: String = (xml \ "theme").text.trim
+
     override def summary: String = (xml \ "summary").text.trim
+
     override def articles: Seq[String] = (xml \ "articles").text.split("[，,]").map(_.trim)
 
     override def pdfUrl: String = (xml \ "pdf").text.trim
@@ -97,7 +104,7 @@ class FileSupremeCourtDbData(protected val dir: File) extends SupremeCourtDbData
  * ファイルシステム上に保存された判例データベースに対してアクセスするためのProvider
  */
 class FileSupremeCourtDbDataProvider(val base: File =
-  new File(System.getProperty("user.home"), "hanrei/data")) extends SupremeCourtDbDataProvider[String] {
+                                     new File(System.getProperty("user.home"), "hanrei/data")) extends SupremeCourtDbDataProvider[String] {
 
   protected def isCorrectDirectory(dir: File): Boolean = {
     (dir.exists && dir.isDirectory && {
@@ -116,7 +123,7 @@ class FileSupremeCourtDbDataProvider(val base: File =
 
   def get(id: String): Option[FileSupremeCourtDbData] = {
     val dir = new File(base, id)
-    if(isCorrectDirectory(dir)) {
+    if (isCorrectDirectory(dir)) {
       Option(new FileSupremeCourtDbData(dir))
     } else {
       None

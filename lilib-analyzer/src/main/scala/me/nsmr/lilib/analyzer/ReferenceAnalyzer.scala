@@ -13,7 +13,7 @@ class ReferenceAnalyzer {
 
   private[this] var last: (Option[JapaneseYear.Era], Option[Int], Option[Court]) = (None, None, None)
 
-  private[this] final val charNormalizer: PartialFunction[Char, Char] = Map (
+  private[this] final val charNormalizer: PartialFunction[Char, Char] = Map(
     '（' -> '(',
     '）' -> ')',
     '，' -> ',',
@@ -23,11 +23,15 @@ class ReferenceAnalyzer {
   } ++ {
     "〇一二三四五六七八九".zipWithIndex.map { case (k, v) => (k, v.toString.head) }.toMap
   } orElse (
-    { case n if !n.isWhitespace => n }: PartialFunction[Char, Char]
-  )
+    {
+      case n if !n.isWhitespace => n
+    }: PartialFunction[Char, Char]
+    )
 
   object patterns {
+
     import scala.util.matching.Regex
+
     final lazy val courtPlaces = CourtUtil.courts.collect { case c if !c.place.isEmpty => c.place }.mkString("|")
     final lazy val court = s"(${courtPlaces}|同)?(${(Court.LEVEL_SHORT.drop(1) ++ Court.LEVEL.drop(1)).mkString("|")}|同)(?:裁|裁判所)|(?:最高裁|最高裁判所)"
     final lazy val branch = CourtUtil.courts.collect { case court if !court.branch.isEmpty => court.branch.map(charNormalizer) }.mkString("|")
@@ -76,7 +80,7 @@ class ReferenceAnalyzer {
   }
 
   def normalize(input: String): Array[String] = {
-    input.lines.map(_.collect ( charNormalizer )).filterNot(
+    input.lines.map(_.collect(charNormalizer)).filterNot(
       l => l.matches(""".{0,2}[0-9]+.{0,2}""")).mkString("").split("[。、,¥¥.]")
   }
 
@@ -102,7 +106,7 @@ class ReferenceAnalyzer {
               case (_, "同", _) => this.lastCourt.map { c => (c.level, c.place) }.get
               case (null, _, _) => (0, "")
               case (l, null, b) => {
-                if(b.endsWith("法廷") && Court.levelOf(l) == 1) {
+                if (b.endsWith("法廷") && Court.levelOf(l) == 1) {
                   (0, "")
                 } else {
                   (Court.levelOf(l), "")
@@ -111,15 +115,15 @@ class ReferenceAnalyzer {
               case (l, p, _) => (Court.levelOf(l), p)
             }
           }
-          if(
+          if (
             ((place == null || place.isEmpty) && level != 0)
-            || (level != 0 && !branch.isEmpty && !branch.endsWith("支部"))
+              || (level != 0 && !branch.isEmpty && !branch.endsWith("支部"))
           ) {
             printinf("")
             logger.warn(s"strange court found: ${court} in ${info.source} (interpreted as: [level=${level}, place='${place}', branch='${branch}'], while the last court found is '${this.lastCourt}')")
             None
           } else {
-            val obj = CourtUtil.courts.find ( c => c.level == level && c.place == place && c.branch == branch) match {
+            val obj = CourtUtil.courts.find(c => c.level == level && c.place == place && c.branch == branch) match {
               case some: Some[Court] => some
               case None => Option(SimpleCourt(place, level, branch))
             }
@@ -166,7 +170,7 @@ class ReferenceAnalyzer {
               case "元" => Some(1)
               case n => Option(n.toInt)
             }
-            if(info.group("date.era") == "同") {
+            if (info.group("date.era") == "同") {
               val y = this.lastYear
               yearNum match {
                 case None => y
@@ -198,7 +202,9 @@ class ReferenceAnalyzer {
           None
       }
       val judgeType = try {
-        Option(info.group("type")).flatMap { JudgeType.get(_) }
+        Option(info.group("type")).flatMap {
+          JudgeType.get(_)
+        }
       } catch {
         case e: Throwable => {
           logger.warn(s"Something went wrong when parsing '${info.group("type")}' as judgeType", e.toString)

@@ -1,10 +1,10 @@
 package me.nsmr
 package lilib.search
 
-import akka.actor.{ ActorSystem, PoisonPill }
+import akka.actor.{ActorSystem, PoisonPill}
 import scala.concurrent.Future
-import scala.util.{ Success, Failure }
-import me.nsmr.lilib.core.{ Precedent }
+import scala.util.{Success, Failure}
+import me.nsmr.lilib.core.{Precedent}
 import me.nsmr.lilib.search.actors._
 import akka.pattern.ask
 import akka.util.Timeout
@@ -20,8 +20,11 @@ object PrecedentIndexBuilder {
 
 trait PrecedentIndexBuilder[K] {
   def add(key: K, value: Precedent): Unit
+
   def add(list: Iterable[(K, Precedent)]): Unit
+
   def add(it: Iterator[(K, Precedent)]): Unit
+
   def build: PrecedentIndex[K]
 }
 
@@ -58,9 +61,9 @@ final class ConcurrentPrecedentIndexBuilder[K](implicit private val system: Acto
   def buildInFuture(implicit timeout: Timeout): Future[PrecedentIndex[K]] = {
     actor ? MainActor.Messages.RequestResult map {
       case MainActor.Messages.RespondIndexes(
-        indexByDates: Map[_, Set[K]],
-        indexByCaseNumbers: Map[_, Set[K]],
-        indexByCourts: Map[_, Set[K]]
+      indexByDates: Map[_, Set[K]],
+      indexByCaseNumbers: Map[_, Set[K]],
+      indexByCourts: Map[_, Set[K]]
       ) => {
         new PrecedentIndex[K](indexByDates, indexByCaseNumbers, indexByCourts)
       }

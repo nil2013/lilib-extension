@@ -9,7 +9,7 @@ import java.net.URLEncoder
 import java.time.temporal.ChronoField
 import java.util.Date
 import org.jsoup.nodes.Element
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import me.nsmr.lilib.core.{CaseMark, CaseNumber, JapaneseYear, Court}
 import org.jsoup.Jsoup
@@ -31,6 +31,14 @@ object ListPage {
     )
   }
 
+  /**
+   * 裁判所裁判例検索ページの絞り込み条件を指定します。
+   *
+   * @param court         裁判所の指定。指定しない場合にはNoneを与えてください。
+   * @param caseNumber    事件番号の指定。指定しない場合にはNoneを与えてください。
+   * @param dateSpecifier 日付の指定。現在の実装では必ず指定する必要があります。
+   * @param texts         検索キーワードの指定。指定しない場合にはNilを与えてください。
+   */
   case class SearchFilter(
                            court: Option[Court],
                            caseNumber: Option[CaseNumber],

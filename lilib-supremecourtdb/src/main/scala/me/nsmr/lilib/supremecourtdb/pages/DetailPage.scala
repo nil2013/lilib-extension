@@ -3,9 +3,14 @@ package lilib
 package supremecourtdb
 package pages
 
+import java.net.URL
+
+import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
+import com.itextpdf.kernel.pdf.{PdfDocument, PdfReader}
 import org.jsoup.Jsoup
 import org.jsoup.HttpStatusException
 import org.jsoup.nodes.Element
+
 import scala.collection.JavaConverters._
 
 object DetailPage {

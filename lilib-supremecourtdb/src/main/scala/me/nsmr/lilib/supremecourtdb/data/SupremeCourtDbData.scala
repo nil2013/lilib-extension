@@ -27,7 +27,9 @@ trait SupremeCourtDbData[K] {
   /**
    * 判例PDFのためのPdfDocumentを安全に使用します。
    */
-  def reading[T](body: PdfDocument => T) = using(getPdfDocument){ body }
+  def reading[T](body: PdfDocument => T) = using(getPdfDocument) {
+    body
+  }
 }
 
 /**

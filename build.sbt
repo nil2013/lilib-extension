@@ -2,7 +2,7 @@ import Dependencies._
 
 ThisBuild / organization := "me.nsmr"
 ThisBuild / scalaVersion := "2.13.0"
-ThisBuild / version      := "0.1.0-SNAPSHOT"
+ThisBuild / version := "0.1.0-SNAPSHOT"
 
 // lazy val root = (project in file(".")).dependsOn(common).
 //   aggregate(analyzer, search, supremecourtdb)
@@ -15,7 +15,7 @@ lazy val common = (project in file("common")).
 lazy val analyzer = (project in file("lilib-analyzer")).
   settings(
     name := "lilib-analyzer",
-    libraryDependencies ++= List (
+    libraryDependencies ++= List(
       scalaTest % Test,
       lilib.core,
       logger.scalaLogging,
@@ -26,7 +26,7 @@ lazy val analyzer = (project in file("lilib-analyzer")).
 lazy val search = (project in file("lilib-search")).
   settings(
     name := "lilib-search",
-    libraryDependencies ++= List (
+    libraryDependencies ++= List(
       scalaTest % Test,
       scalaXml,
       jsoup,
@@ -42,7 +42,7 @@ lazy val search = (project in file("lilib-search")).
 lazy val supremecourtdb = (project in file("lilib-supremecourtdb")).
   settings(
     name := "lilib-supremecourtdb",
-    libraryDependencies ++= List (
+    libraryDependencies ++= List(
       scalaTest % Test,
       scalaXml,
       jsoup,
