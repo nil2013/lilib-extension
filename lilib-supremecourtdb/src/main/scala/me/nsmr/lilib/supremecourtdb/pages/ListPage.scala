@@ -61,15 +61,14 @@ object ListPage {
     def asQuery: String = {
       import URLEncoder.encode
 
+      val texts = {
+        val ids = (1 to 9).iterator.map(n => s"text${n}").toList
+        ids.zip(this.texts ::: ids.map(_ => ""))
+      }
       ((courtToMap(court)
         ++ caseNumberToMap(caseNumber)
         ++ dateSpecifier.asMap
-        ++ (
-        texts.zipWithIndex.map {
-          case (text, idx) =>
-            s"text${idx + 1}" -> text
-        }
-        ).toMap)
+        ++ texts.toMap)
         .map {
           case (key, value) =>
             (encode(s"filter[$key]", "UTF-8"), encode(s"$value", "UTF-8"))
@@ -163,7 +162,7 @@ class ListPage(
             elem.select("td > a").get(1))
         }
       }.toList,
-      Option(doc.selectFirst("div#next_buttom > div.s_title_r > a"))
+      doc.select("div#next_buttom > div.s_title_r > a").asScala.find(_.text == "次へ→")
     )
   }
 
@@ -171,34 +170,49 @@ class ListPage(
 
   def hasNext: Boolean = nextUrl.isDefined
 
-  /** ちょっと妥協した。本当はnextUrlをパースしてListPageを再構築したい。 */
-  def next: Option[ListPage] = if (!hasNext) None else {
-    Option(new ListPage(
-      pageType, params,
-      page match {
-        case None => Some(1)
-        case Some(page) => Some(page + 1)
+  def nextPageNumber: Option[Int] = if (!hasNext) None else {
+    val urlPat = s"${ListPage.BASE_URL}.*&page=([0-9]+).*".r
+    this.nextUrl match {
+      case Some(urlPat(p)) => Option(p.toInt)
+      case _ => this.page match {
+        case None => Some(2)
+        case _ => this.page.map(_ + 1)
       }
-    ))
+    }
   }
 
-  def details: List[DetailPage] = content._1.map {
+  /** ちょっと妥協した。本当はnextUrlをパースしてListPageを再構築したい。 */
+  def next: Option[ListPage] = {
+    nextPageNumber.map { page =>
+      new ListPage(pageType, params, Option(page))
+    }
+  }
+
+  lazy val ids: List[Int] = content._1.map {
     case (elem, _, _) =>
       elem.attr("abs:href") match {
-        case ListPage.DETAIL_URL_PATTERN(id) => new DetailPage(id.toInt)
+        case ListPage.DETAIL_URL_PATTERN(id) => id.toInt
         case url => throw new IllegalArgumentException(s"Illegal Pattern of URL: ${url}")
       }
+  }
+
+  def details: List[DetailPage] = ids.map {
+    new DetailPage(_)
   }
 
   def size: Int = content._1.size
 
   lazy val total: Int = {
     val text = doc.selectFirst("h4.s_title_l")
-    println(text)
+    // println(text)
     ListPage.TOTAL_CASE_PATTERN.findFirstMatchIn(doc.selectFirst("h4.s_title_l").text) match {
       case None => -1
       case Some(m) => m.group(1).toInt
     }
+  }
+
+  override def toString(): String = {
+    s"ListPage( pageType = ${pageType}, params = ${this.params}, page = ${this.page} )"
   }
 
 }

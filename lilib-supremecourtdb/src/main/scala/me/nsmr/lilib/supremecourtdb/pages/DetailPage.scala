@@ -81,32 +81,77 @@ class DetailPage(val id: Int, val pageType: Int = 2) {
 
   def url = DetailPage.getUrlOf(pageType, id)
 
-  lazy val doc = try {
-    Some(Jsoup.connect(url).get)
-  } catch {
-    case e: HttpStatusException => None
-  }
+  lazy val doc = Jsoup.connect(url).get
 
-  lazy val content: Option[Map[String, Element]] = doc.flatMap { doc =>
+  lazy val content: Map[String, Element] = {
     val elements =
       doc.select("div.dlist").iterator.asScala.flatMap(_.children.asScala).filter { x =>
         x.tagName == "div" && x.className.isEmpty
       }
-    Option(
-      elements.collect {
-        // もうちょっと包括的に定義できないか
-        case e if !(e.children.size < 2) => {
-          val key = e.children.asScala.head.text.trim
-          if(PrecedentKey.Content.name == key) {
-            (key, e.selectFirst("a"))
-          } else {
-            (key, e.child(1))
-          }
+    elements.collect {
+      // もうちょっと包括的に定義できないか
+      case e if !(e.children.size < 2) => {
+        val key = e.children.asScala.head.text.trim
+        if (PrecedentKey.Content.name == key) {
+          (key, e.selectFirst("a"))
+        } else {
+          (key, e.child(1))
         }
-      }.toMap
-    )
+      }
+    }.toMap
+  }
+
+  lazy val contentPdfUrl: Option[String] = {
+    content.get("全文").flatMap { elem =>
+      elem.select("a").asScala.find { as =>
+        as.text == "全文"
+      }.map {
+        _.attr("abs:href")
+      }
+    }
+  }
+
+  /**
+   *
+   * @return
+   */
+  def getContentPdfProcessor[A](implicit con: PdfProcessorGenerator[A]): Option[A] = {
+    contentPdfUrl.flatMap {
+      con.generateProcessor
+    }
+  }
+
+  def getFullText[A](implicit con: PdfProcessorGenerator[A]): Option[String] = this.contentPdfUrl.flatMap {
+    con.convertPdfToText _
   }
 
   override def toString(): String = s"DetailPage(id = ${id}, pageType = ${pageType})"
 }
 
+trait PdfProcessorGenerator[A] {
+  def generateProcessor(url: String): Option[A]
+
+  def convertPdfToText(url: String): Option[String]
+}
+
+object ITextPdfProcessorGenerator extends PdfProcessorGenerator[PdfDocument] {
+
+  override def generateProcessor(url: String): Option[PdfDocument] = {
+    try {
+      Option(new PdfDocument(new PdfReader((new URL(url)).openStream())))
+    } catch {
+      case e: Exception => None
+    }
+  }
+
+  override def convertPdfToText(url: String): Option[String] = {
+    generateProcessor(url).map {
+      using(_) { doc =>
+        (1 to doc.getNumberOfPages).iterator.map { page =>
+          PdfTextExtractor.getTextFromPage(doc.getPage(page))
+        }.mkString(System.lineSeparator())
+      }
+    }
+  }
+
+}
