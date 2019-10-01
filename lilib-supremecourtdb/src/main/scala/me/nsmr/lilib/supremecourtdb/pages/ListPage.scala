@@ -80,7 +80,7 @@ object ListPage {
         ++ caseNumberToMap(caseNumber)
         ++ dateSpecifier.asMap
         ++ texts.toMap
-        + ("division" -> division.map(_.idx).getOrElse(0)))
+        + ("division1" -> division.map(_.idx).getOrElse(0)))
         .map {
           case (key, value) =>
             (encode(s"filter[$key]", "UTF-8"), encode(s"$value", "UTF-8"))
