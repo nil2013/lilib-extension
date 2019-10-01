@@ -53,7 +53,7 @@ object ListPage {
                            court: Option[Court],
                            caseNumber: Option[CaseNumber],
                            dateSpecifier: DateSpecifier,
-                           division: Option[Division] = None,
+                           divisions: List[Division] = Nil,
                            texts: List[String] = Nil,
                          ) {
     private def courtToMap(court: Option[Court]): Map[String, String] = Map(
@@ -80,7 +80,7 @@ object ListPage {
         ++ caseNumberToMap(caseNumber)
         ++ dateSpecifier.asMap
         ++ texts.toMap
-        + ("division1" -> division.map(_.idx).getOrElse(0)))
+        ++ divisions.map { d => (s"division${d.idx}", "1")})
         .map {
           case (key, value) =>
             (encode(s"filter[$key]", "UTF-8"), encode(s"$value", "UTF-8"))
