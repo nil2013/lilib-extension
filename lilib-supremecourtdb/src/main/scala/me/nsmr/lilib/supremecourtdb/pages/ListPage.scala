@@ -17,6 +17,16 @@ import org.jsoup.Jsoup
 object ListPage {
 
   case class JapaneseDate(year: JapaneseYear, month: Int, date: Int)
+  object Division {
+    case object Minji extends Division("民事", 1)
+    case object Keiji extends Division("刑事", 2)
+
+    lazy val values = Array[Division](Minji, Keiji)
+    def apply(n: Int): Division = values(n)
+    def apply(name: String): Option[Division] = values.find(_.name == name)
+    def apply(obj: Division): Int = values.indexOf(obj)
+  }
+  sealed class Division(val name: String, val idx: Int)
 
   object SearchFilter {
     def apply(dateSpecifier: DateSpecifier): SearchFilter = {
@@ -43,6 +53,7 @@ object ListPage {
                            court: Option[Court],
                            caseNumber: Option[CaseNumber],
                            dateSpecifier: DateSpecifier,
+                           division: Option[Division] = None,
                            texts: List[String] = Nil,
                          ) {
     private def courtToMap(court: Option[Court]): Map[String, String] = Map(
@@ -68,7 +79,8 @@ object ListPage {
       ((courtToMap(court)
         ++ caseNumberToMap(caseNumber)
         ++ dateSpecifier.asMap
-        ++ texts.toMap)
+        ++ texts.toMap
+        + ("division" -> division.map(_.idx).getOrElse(0)))
         .map {
           case (key, value) =>
             (encode(s"filter[$key]", "UTF-8"), encode(s"$value", "UTF-8"))
@@ -145,6 +157,9 @@ class ListPage(
                 val params: ListPage.SearchFilter,
                 val page: Option[Int] = None
               ) {
+  def copy(pageType: Int = this.pageType, params: ListPage.SearchFilter = this.params, page: Option[Int] = this.page): ListPage =
+    new ListPage(pageType, params, page)
+
   def url: String = page match {
     case None => ListPage.getUrlOf(pageType, params)
     case Some(page) => ListPage.getUrlOf(pageType, params, page)
